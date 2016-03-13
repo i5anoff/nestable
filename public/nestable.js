@@ -33,6 +33,8 @@ angular.module("nestable",[])
 				node = scope.node;
 			if(node.children === undefined || node.children.length === 0)
 				node.state = "leaf";
+			else if(node.state === "leaf")
+				node.state = "expanded";
 			for(i in node.children){
 				if(node.children[i].state === undefined)
 					node.children[i].state = "expanded";
@@ -71,6 +73,8 @@ angular.module("nestable",[])
 						dropNode.children = [scope.draggedNode];
 					else
 						dropNode.children.splice(0, 0, scope.draggedNode);
+					if(scope.draggedNode.state==='collapsed')
+						scope.draggedNode.state='expanded';
 				
 					assignCoordinates();
 				}
