@@ -16,6 +16,7 @@ angular.module("nestable",[])
 		scope.node = {"children":scope.list};
 		scope.node.coordinates = [];
 		assignCoordinates();
+		assignStates();
 		scope.dragStart = dragStart;
 		scope.dragStop = dragStop;
 		scope.dragged = dragged;
@@ -33,29 +34,49 @@ angular.module("nestable",[])
 				node = scope.node;
 			if(node.children === undefined || node.children.length === 0)
 				node.state = "leaf";
-			else if(node.state === "leaf")
-				node.state = "expanded";
 			for(i in node.children){
-				if(node.children[i].state === undefined)
-					node.children[i].state = "expanded";
 				node.children[i].coordinates = node.coordinates.slice();
 				node.children[i].coordinates.push(i);
 				assignCoordinates(node.children[i]);
 			}
 		}
 
-		function dragStart($event, coordinates){
+		function assignStates(node){
+			if(!node)
+				node = scope.node;
+			if(node.children === undefined || node.children.length === 0)
+				node.state = "leaf";
+			else if(node.state === "leaf")
+				node.state = "expanded";
+			for(i in node.children){			
+				if(node.children[i].state === undefined)
+					node.children[i].state = "expanded";
+				assignStates(node.children[i]);
+			}
+		}
+
+		function setState(node, state){
+			if(node.children === undefined || node.children.length === 0){
+				return;
+			}
+			node.state = state;
+			for(i in node.children){
+				setState(node.children[i], state);
+			}
+		}
+
+		function dragStart($event, node){
 			$event.stopPropagation();
 			$event.preventDefault();
 			draggedElement = $($event.target).closest('li');
-			scope.draggedNode = getNode(coordinates);
+			scope.draggedNode = node;;
 			draggedElement.css("position","relative");
 			scope.offsetX = $event.pageX;
 			scope.offsetY = $event.pageY;
 		}
 
-		function dragStop($event, coordinates){
-			if(coordinates !== undefined){
+		function dragStop($event, node){
+			if(node !== undefined){
 				$event.stopPropagation();
 				if(!draggedElement)
 					return;
@@ -72,11 +93,11 @@ angular.module("nestable",[])
 					if(dropNode.children === undefined)
 						dropNode.children = [scope.draggedNode];
 					else
-						dropNode.children.splice(0, 0, scope.draggedNode);
-					if(scope.draggedNode.state==='collapsed')
-						scope.draggedNode.state='expanded';
+						dropNode.children.splice(0, 0, scope.draggedNode);					
 				
 					assignCoordinates();
+					assignStates();
+					setState(scope.draggedNode, "expanded");
 				}
 			}
 			if(draggedElement)
@@ -92,7 +113,7 @@ angular.module("nestable",[])
 				return;
 			$event.stopPropagation();
 			$event.preventDefault();
-			draggedElement.css({'left':5 + $event.pageX - scope.offsetX,'top':$event.pageY - scope.offsetY});
+			draggedElement.css({'left':$event.pageX - scope.offsetX,'top':$event.pageY - scope.offsetY});
 		}
 
 		function getNode(coordinates){
@@ -116,7 +137,10 @@ angular.module("nestable",[])
 				var child = $(children[i]);
 				offset = child.offset();
 				if(child.attr('data-coordinates') !== draggedElement.attr('data-coordinates'))
-					if(offset.left<x && offset.top<y && offset.left+child.outerWidth()>x && offset.top+child.outerHeight()>y)
+					if(offset.left < x 
+							&& offset.top < y 
+							&& offset.left+child.outerWidth() > x 
+							&& offset.top+child.outerHeight() > y)
 						return getCoveringNode(x,y, child) || child;
 			}
 			return undefined;
