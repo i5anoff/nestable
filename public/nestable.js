@@ -12,6 +12,7 @@ angular.module("nestable",[])
 	};
 
 	function linkFn(scope,element,attr){
+		scope.maxHeight = 5;
 		scope.recursiveTemplate = "/nestable.html";
 		scope.node = {"children":scope.list};
 		scope.node.coordinates = [];
@@ -90,15 +91,19 @@ angular.module("nestable",[])
 					var initialNode = getNode(initialCoordinates);
 
 					if(dropNode !== initialNode){
-						initialNode.children.splice(i, 1);
-						if(dropNode.children === undefined)
-							dropNode.children = [scope.draggedNode];
+						if(dropNode.coordinates.length + getHeight(scope.draggedNode) <= scope.maxHeight){
+							initialNode.children.splice(i, 1);
+							if(dropNode.children === undefined)
+								dropNode.children = [scope.draggedNode];
+							else
+								dropNode.children.splice(0, 0, scope.draggedNode);					
+						
+							assignCoordinates();
+							assignStates();
+							setState(scope.draggedNode, "expanded");
+						}
 						else
-							dropNode.children.splice(0, 0, scope.draggedNode);					
-					
-						assignCoordinates();
-						assignStates();
-						setState(scope.draggedNode, "expanded");
+							console.log("maximum depth achievable is "+ scope.maxHeight);
 					}
 				}
 			}
@@ -146,6 +151,20 @@ angular.module("nestable",[])
 						return getCoveringNode(x,y, child) || child;
 			}
 			return undefined;
+		}
+
+		function getHeight(node){
+			if(node.children === undefined || node.children.length === 0)
+				return 1;
+			else{
+				var result = 0, solution = 0;
+				for(i in node.children){
+					result = getHeight(node.children[i]);
+					if(solution < result)
+						solution = result;
+				}
+				return 1 + solution;
+			}
 		}
 
 		function toggleState(node){
