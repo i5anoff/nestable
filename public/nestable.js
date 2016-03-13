@@ -90,7 +90,7 @@ angular.module("nestable",[])
 					var i = initialCoordinates.pop();
 					var initialNode = getNode(initialCoordinates);
 
-					if(dropNode !== initialNode){
+					if(dropNode !== initialNode || i !==0){
 						if(dropNode.coordinates.length + getHeight(scope.draggedNode) <= scope.maxHeight){
 							initialNode.children.splice(i, 1);
 							if(dropNode.children === undefined)
@@ -100,6 +100,7 @@ angular.module("nestable",[])
 						
 							assignCoordinates();
 							assignStates();
+							if(dropNode !== initialNode)
 							setState(scope.draggedNode, "expanded");
 						}
 						else
