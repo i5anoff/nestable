@@ -25,6 +25,8 @@ angular.module("nestable",[])
 		scope.offsetX = 0;
 		scope.offsetY = 0;
 
+		element.on('mouseleave', function(){if(draggedElement !== undefined)scope.$apply(dragStop);})
+
 		function assignCoordinates(node){
 			if(!node)
 				node = scope.node;
@@ -46,23 +48,25 @@ angular.module("nestable",[])
 		}
 
 		function dragStop($event, coordinates){
-			$event.stopPropagation();
-			if(!draggedElement)
-				return;
-			$event.preventDefault();
-			var dropElement = getCoveringNode($event.pageX, $event.pageY);
-			if(dropElement){
-				var dropCoordinates = JSON.parse(dropElement.attr('data-coordinates'));
-				var j = dropCoordinates.pop();
-				var initialCoordinates = scope.draggedNode.coordinates.slice();
-				var i =initialCoordinates.pop();
-				var dropNode = getNode(dropCoordinates);
-				var initialNode = getNode(initialCoordinates);
+			if(coordinates !== undefined){
+				$event.stopPropagation();
+				if(!draggedElement)
+					return;
+				$event.preventDefault();
+				var dropElement = getCoveringNode($event.pageX, $event.pageY);
+				if(dropElement){
+					var dropCoordinates = JSON.parse(dropElement.attr('data-coordinates'));
+					var j = dropCoordinates.pop();
+					var initialCoordinates = scope.draggedNode.coordinates.slice();
+					var i =initialCoordinates.pop();
+					var dropNode = getNode(dropCoordinates);
+					var initialNode = getNode(initialCoordinates);
 
-				initialNode.children.splice(i, 1);
-				dropNode.children.splice(j, 0, scope.draggedNode);
-			
-				assignCoordinates();
+					initialNode.children.splice(i, 1);
+					dropNode.children.splice(j, 0, scope.draggedNode);
+				
+					assignCoordinates();
+				}
 			}
 			draggedElement.css({'position':'static','left':'0px','top':'0px'});
 			draggedElement = undefined;
