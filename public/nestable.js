@@ -89,15 +89,17 @@ angular.module("nestable",[])
 					var i = initialCoordinates.pop();
 					var initialNode = getNode(initialCoordinates);
 
-					initialNode.children.splice(i, 1);
-					if(dropNode.children === undefined)
-						dropNode.children = [scope.draggedNode];
-					else
-						dropNode.children.splice(0, 0, scope.draggedNode);					
-				
-					assignCoordinates();
-					assignStates();
-					setState(scope.draggedNode, "expanded");
+					if(dropNode !== initialNode){
+						initialNode.children.splice(i, 1);
+						if(dropNode.children === undefined)
+							dropNode.children = [scope.draggedNode];
+						else
+							dropNode.children.splice(0, 0, scope.draggedNode);					
+					
+						assignCoordinates();
+						assignStates();
+						setState(scope.draggedNode, "expanded");
+					}
 				}
 			}
 			if(draggedElement)
