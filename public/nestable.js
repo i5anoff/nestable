@@ -99,8 +99,9 @@ angular.module("nestable",[])
 			for(i = 0;i < children.length; i++){
 				var child = $(children[i]);
 				offset = child.offset();
-				if(offset.left<x && offset.top<y && offset.left+child.outerWidth()>x && offset.top+child.outerHeight()>y)
-					return getCoveringNode(x,y, child) || child;
+				if(child.attr('data-coordinates') !== draggedElement.attr('data-coordinates'))
+					if(offset.left<x && offset.top<y && offset.left+child.outerWidth()>x && offset.top+child.outerHeight()>y)
+						return getCoveringNode(x,y, child) || child;
 			}
 			return undefined;
 		}

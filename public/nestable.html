@@ -1,7 +1,6 @@
 <li ng-repeat="node in node.children" data-coordinates={{node.coordinates}}
 										ng-mousedown="dragStart($event, node.coordinates)" 
 										ng-mouseup="dragStop($event, node.coordinates)"
-										ng-mouseleave="dragStop($event, node.coordinates)" 
 										ng-mousemove="dragged($event)">
 	<div ng-include="customTemplate"></div>
 	<ol ng-include="recursiveTemplate"></ol>
