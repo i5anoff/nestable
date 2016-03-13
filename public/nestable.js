@@ -19,18 +19,23 @@ angular.module("nestable",[])
 		scope.dragStart = dragStart;
 		scope.dragStop = dragStop;
 		scope.dragged = dragged;
+		scope.toggleState = toggleState;
 		scope.draggedNode = undefined;
 		var draggedElement = undefined;
 		var rootElement = element;
 		scope.offsetX = 0;
 		scope.offsetY = 0;
 
-		element.on('mouseleave', function(){if(draggedElement !== undefined)scope.$apply(dragStop);})
+		$('body').on('mouseleave', function(){if(draggedElement !== undefined)scope.$apply(dragStop);})
 
 		function assignCoordinates(node){
 			if(!node)
 				node = scope.node;
+			if(node.children === undefined || node.children.length === 0)
+				node.state = "leaf";
 			for(i in node.children){
+				if(node.children[i].state === undefined)
+					node.children[i].state = "expanded";
 				node.children[i].coordinates = node.coordinates.slice();
 				node.children[i].coordinates.push(i);
 				assignCoordinates(node.children[i]);
@@ -56,14 +61,16 @@ angular.module("nestable",[])
 				var dropElement = getCoveringNode($event.pageX, $event.pageY);
 				if(dropElement){
 					var dropCoordinates = JSON.parse(dropElement.attr('data-coordinates'));
-					var j = dropCoordinates.pop();
-					var initialCoordinates = scope.draggedNode.coordinates.slice();
-					var i =initialCoordinates.pop();
 					var dropNode = getNode(dropCoordinates);
+					var initialCoordinates = scope.draggedNode.coordinates.slice();
+					var i = initialCoordinates.pop();
 					var initialNode = getNode(initialCoordinates);
 
 					initialNode.children.splice(i, 1);
-					dropNode.children.splice(j, 0, scope.draggedNode);
+					if(dropNode.children === undefined)
+						dropNode.children = [scope.draggedNode];
+					else
+						dropNode.children.splice(0, 0, scope.draggedNode);
 				
 					assignCoordinates();
 				}
@@ -81,7 +88,7 @@ angular.module("nestable",[])
 				return;
 			$event.stopPropagation();
 			$event.preventDefault();
-			draggedElement.css({'left':$event.pageX - scope.offsetX,'top':$event.pageY - scope.offsetY});
+			draggedElement.css({'left':5 + $event.pageX - scope.offsetX,'top':$event.pageY - scope.offsetY});
 		}
 
 		function getNode(coordinates){
@@ -109,6 +116,13 @@ angular.module("nestable",[])
 						return getCoveringNode(x,y, child) || child;
 			}
 			return undefined;
+		}
+
+		function toggleState(node){
+			if(node.state === "expanded")
+				node.state = "collapsed";
+			else if(node.state === "collapsed")
+				node.state = "expanded";
 		}
 	}
 })

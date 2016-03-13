@@ -2,7 +2,7 @@
 										ng-mousedown="dragStart($event, node.coordinates)" 
 										ng-mouseup="dragStop($event, node.coordinates)"
 										ng-mousemove="dragged($event)">
-	<i class="glyphicon glyphicon-plus" ng-mousedown="dragStop()" ng-mouseup="dragStop()" data-toggle="collapse" data-target="ol[data-id='{{node.coordinates}}']"></i>
+	<i class="glyphicon" ng-show="node.state==='expanded'||node.state==='collapsed'" ng-mousedown="dragStop()" ng-mouseup="dragStop()" ng-click="toggleState(node)" ng-class="node.state==='collapsed'?'glyphicon-chevron-down':'glyphicon-chevron-up'" data-toggle="collapse" data-target="ol[data-id='{{node.coordinates}}']"></i>
 	<div ng-include="customTemplate"></div>
 	<ol data-id="{{node.coordinates}}" class="collapse in" ng-include="recursiveTemplate"></ol>
 </li>
