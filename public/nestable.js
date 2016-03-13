@@ -68,7 +68,8 @@ angular.module("nestable",[])
 					assignCoordinates();
 				}
 			}
-			draggedElement.css({'position':'static','left':'0px','top':'0px'});
+			if(draggedElement)
+				draggedElement.css({'position':'static','left':'0px','top':'0px'});
 			draggedElement = undefined;
 			scope.draggedNode = undefined;
 			scope.offsetX = 0;
