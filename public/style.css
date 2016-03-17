@@ -1,12 +1,16 @@
 .dragged{
 	position: relative;
-	background-color: blue;
 }
 li{
 	list-style-type: none;
 	border: 1px solid black;
 	border-radius: 3px;
 	margin: 3px;
+	border-radius: 10px;
+}
+li>i,
+li>div{
+	padding: 5px;
 }
 li>i{
 	vertical-align: top;
