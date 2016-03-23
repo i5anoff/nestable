@@ -13,23 +13,24 @@ angular.module("nestable",[])
 
 	function linkFn(scope,element,attr){
 		scope.maxHeight = 5;
+		scope.preventDrag = 'prevent-drag';
 		scope.recursiveTemplate = "/nestable.html";
 		scope.node = {"children":scope.list};
 		scope.node.coordinates = [];
 
 		assignCoordinates();
 		assignStates();
-		scope.dragStart = dragStart;
-		scope.dragStop = dragStop;
-		scope.dragged = dragged;
 		scope.toggleState = toggleState;
-		scope.draggedNode = undefined;
+		var draggedNode = undefined;
 		var draggedElement = undefined;
 		var rootElement = element;
 		scope.offsetX = 0;
 		scope.offsetY = 0;
 
 		$('body').on('mouseleave', function(){if(draggedElement !== undefined)scope.$apply(dragStop);})
+		rootElement.on('mousedown', function(event){if(!$(event.target).hasClass(scope.preventDrag))dragStart(event);});
+		rootElement.on('mouseup', function(event){if(!$(event.target).hasClass(scope.preventDrag))dragStop(event);});
+		rootElement.on('mousemove', function(event){if(!$(event.target).hasClass(scope.preventDrag))dragged(event);});
 
 		function assignCoordinates(node){
 			if(!node)
@@ -57,64 +58,62 @@ angular.module("nestable",[])
 			}
 		}
 
-		function dragStart($event, node){
+		function dragStart($event){
 			$event.stopPropagation();
-			$event.preventDefault();
 			draggedElement = $($event.target).closest('li');
-			scope.draggedNode = node;;
+			var node = getNode(JSON.parse(draggedElement.attr('data-coordinates')));
+			draggedNode = node;;
 			draggedElement.css("position","relative");
 			scope.offsetX = $event.pageX;
 			scope.offsetY = $event.pageY;
 		}
 
-		function dragStop($event, node){
-			if(node !== undefined){
-				$event.stopPropagation();
-				if(!draggedElement)
-					return;
-				$event.preventDefault();
-				var dropElement = getCoveringNode($event.pageX, $event.pageY);
-				if(dropElement){
-					var dropCoordinates = JSON.parse(dropElement.attr('data-coordinates'));
-					var dropNode = getNode(dropCoordinates);
-					var initialCoordinates = scope.draggedNode.coordinates.slice();
-					var i = initialCoordinates.pop();
-					var initialNode = getNode(initialCoordinates);
+		function dragStop($event){
+			$event.stopPropagation();
+			if(!draggedElement || !draggedNode)
+				return;
+			var dropElement = getCoveringNode($event.pageX, $event.pageY);
 
-					if(dropNode !== initialNode || i !==0){
-						if(dropNode.coordinates.length + getHeight(scope.draggedNode) <= scope.maxHeight){
-							initialNode.children.splice(i, 1);
-							if(dropNode.children === undefined)
-								dropNode.children = [scope.draggedNode];
-							else
-								dropNode.children.splice(0, 0, scope.draggedNode);					
-						
-							assignCoordinates();
-							assignStates();
-						}
+			if(dropElement){
+				var dropCoordinates = JSON.parse(dropElement.attr('data-coordinates'));
+				var dropNode = getNode(dropCoordinates);
+				var initialCoordinates = draggedNode.coordinates.slice();
+				var i = initialCoordinates.pop();
+				var initialNode = getNode(initialCoordinates);
+
+				if(dropNode !== initialNode || i !==0){
+					if(dropNode.coordinates.length + getHeight(draggedNode) <= scope.maxHeight){
+						initialNode.children.splice(i, 1);
+						if(dropNode.children === undefined)
+							dropNode.children = [draggedNode];
 						else
-							console.log("maximum depth achievable is "+ scope.maxHeight);
+							dropNode.children.splice(0, 0, draggedNode);					
+					
+						assignCoordinates();
+						assignStates();
+						scope.$apply();
 					}
+					else
+						console.log("maximum depth achievable is "+ scope.maxHeight);
 				}
 			}
 			if(draggedElement)
 				draggedElement.css({'position':'static','left':'0px','top':'0px'});
 			draggedElement = undefined;
-			scope.draggedNode = undefined;
+			draggedNode = undefined;
 			scope.offsetX = 0;
 			scope.offsetY = 0;
 		}
 
-		function dragged($event, coordinates){
+		function dragged($event){
+			$event.stopPropagation();
 			if(!draggedElement)
 				return;
-			$event.stopPropagation();
-			$event.preventDefault();
 			draggedElement.css({'left':$event.pageX - scope.offsetX,'top':$event.pageY - scope.offsetY});
 		}
 
 		function getNode(coordinates){
-			el = scope.node;
+			var el = scope.node;
 			for(i in coordinates)
 				el = el.children[coordinates[i]];
 			return el;
@@ -157,7 +156,9 @@ angular.module("nestable",[])
 			}
 		}
 
-		function toggleState(node){
+		function toggleState($event, node){
+			if($(event.target).next().next().hasClass('collapsing'))
+				return;
 			if(node.state === "expanded")
 				node.state = "collapsed";
 			else if(node.state === "collapsed")
