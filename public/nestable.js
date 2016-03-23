@@ -14,23 +14,21 @@ angular.module("nestable",[])
 	function linkFn(scope,element,attr){
 		scope.maxHeight = 5;
 		scope.recursiveTemplate = "/nestable.html";
-		
 		scope.node = {"children":scope.list};
 		scope.node.coordinates = [];
-		scope.toggleState = toggleState;
-		
 		assignCoordinates();
 		assignStates();
-		
-		var draggedNode = undefined;
+		scope.dragStart = dragStart;
+		scope.dragStop = dragStop;
+		scope.dragged = dragged;
+		scope.toggleState = toggleState;
+		scope.draggedNode = undefined;
 		var draggedElement = undefined;
 		var rootElement = element;
 		scope.offsetX = 0;
 		scope.offsetY = 0;
 
-		element.on('mouseup', dragStop);
-		element.on('mousedown', dragStart);
-		element.on('mousemove', dragged);
+		$('body').on('mouseleave', function(){if(draggedElement !== undefined)scope.$apply(dragStop);})
 
 		function assignCoordinates(node){
 			if(!node)
@@ -58,69 +56,72 @@ angular.module("nestable",[])
 			}
 		}
 
-		function dragStart(event){
-			event.stopPropagation();
-			event.preventDefault();
-			var target = $(event.target);
-			if(target.hasClass('prevent-drag'))
+		function setState(node, state){
+			if(node.children === undefined || node.children.length === 0){
 				return;
-			draggedElement = target.closest('li');
-			draggedNode = getNode(JSON.parse(draggedElement.attr("data-coordinates")));
-			draggedElement.css("position","relative");
-			scope.offsetX = event.pageX;
-			scope.offsetY = event.pageY;
+			}
+			node.state = state;
+			for(i in node.children){
+				setState(node.children[i], state);
+			}
 		}
 
-		function dragStop(event){
-			event.stopPropagation();
-			event.preventDefault();
-			var target = $(event.target);
-			if(target.hasClass('prevent-drag'))
-				return;
+		function dragStart($event, node){
+			$event.stopPropagation();
+			$event.preventDefault();
+			draggedElement = $($event.target).closest('li');
+			scope.draggedNode = node;;
+			draggedElement.css("position","relative");
+			scope.offsetX = $event.pageX;
+			scope.offsetY = $event.pageY;
+		}
 
-			var dropElement = getCoveringNode(event.pageX, event.pageY);
-			if(dropElement){
-				var dropCoordinates = JSON.parse(dropElement.attr('data-coordinates'));
-				var dropNode = getNode(dropCoordinates);
-				var initialCoordinates = draggedNode.coordinates.slice();
-				var i = initialCoordinates.pop();
-				var initialNode = getNode(initialCoordinates);
+		function dragStop($event, node){
+			if(node !== undefined){
+				$event.stopPropagation();
+				if(!draggedElement)
+					return;
+				$event.preventDefault();
+				var dropElement = getCoveringNode($event.pageX, $event.pageY);
+				if(dropElement){
+					var dropCoordinates = JSON.parse(dropElement.attr('data-coordinates'));
+					var dropNode = getNode(dropCoordinates);
+					var initialCoordinates = scope.draggedNode.coordinates.slice();
+					var i = initialCoordinates.pop();
+					var initialNode = getNode(initialCoordinates);
 
-				if(dropNode !== initialNode || i !==0){
-					if(dropNode.coordinates.length + getHeight(draggedNode) <= scope.maxHeight){
-						initialNode.children.splice(i, 1);
-						if(dropNode.children === undefined)
-							dropNode.children = [draggedNode];
+					if(dropNode !== initialNode || i !==0){
+						if(dropNode.coordinates.length + getHeight(scope.draggedNode) <= scope.maxHeight){
+							initialNode.children.splice(i, 1);
+							if(dropNode.children === undefined)
+								dropNode.children = [scope.draggedNode];
+							else
+								dropNode.children.splice(0, 0, scope.draggedNode);					
+						
+							assignCoordinates();
+							assignStates();
+							if(dropNode !== initialNode)
+							setState(scope.draggedNode, "expanded");
+						}
 						else
-							dropNode.children.splice(0, 0, draggedNode);					
-					
-						assignCoordinates();
-						assignStates();
-						scope.$apply();
+							console.log("maximum depth achievable is "+ scope.maxHeight);
 					}
-					else
-						console.log("maximum depth achievable is "+ scope.maxHeight);
 				}
 			}
 			if(draggedElement)
 				draggedElement.css({'position':'static','left':'0px','top':'0px'});
 			draggedElement = undefined;
-			draggedNode = undefined;
+			scope.draggedNode = undefined;
 			scope.offsetX = 0;
 			scope.offsetY = 0;
 		}
 
-		function dragged(event, coordinates){
+		function dragged($event, coordinates){
 			if(!draggedElement)
 				return;
-			event.stopPropagation();
-			event.preventDefault();
-
-			var target = $(event.target);
-			if(target.hasClass('prevent-drag'))
-				return;
-			
-			draggedElement.css({'left':event.pageX - scope.offsetX,'top':event.pageY - scope.offsetY});
+			$event.stopPropagation();
+			$event.preventDefault();
+			draggedElement.css({'left':$event.pageX - scope.offsetX,'top':$event.pageY - scope.offsetY});
 		}
 
 		function getNode(coordinates){
@@ -167,9 +168,7 @@ angular.module("nestable",[])
 			}
 		}
 
-		function toggleState($event, node){
-			if($($event.target).siblings('ol').hasClass('collapsing'))
-				return;
+		function toggleState(node){
 			if(node.state === "expanded")
 				node.state = "collapsed";
 			else if(node.state === "collapsed")
