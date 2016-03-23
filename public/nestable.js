@@ -16,6 +16,7 @@ angular.module("nestable",[])
 		scope.recursiveTemplate = "/nestable.html";
 		scope.node = {"children":scope.list};
 		scope.node.coordinates = [];
+
 		assignCoordinates();
 		assignStates();
 		scope.dragStart = dragStart;
@@ -56,16 +57,6 @@ angular.module("nestable",[])
 			}
 		}
 
-		function setState(node, state){
-			if(node.children === undefined || node.children.length === 0){
-				return;
-			}
-			node.state = state;
-			for(i in node.children){
-				setState(node.children[i], state);
-			}
-		}
-
 		function dragStart($event, node){
 			$event.stopPropagation();
 			$event.preventDefault();
@@ -100,8 +91,6 @@ angular.module("nestable",[])
 						
 							assignCoordinates();
 							assignStates();
-							if(dropNode !== initialNode)
-							setState(scope.draggedNode, "expanded");
 						}
 						else
 							console.log("maximum depth achievable is "+ scope.maxHeight);
