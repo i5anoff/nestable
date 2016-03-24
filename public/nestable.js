@@ -23,6 +23,7 @@ angular.module("nestable",[])
 		scope.toggleState = toggleState;
 		var draggedNode = undefined;
 		var draggedElement = undefined;
+		var dropElement = undefined;
 		var rootElement = element;
 		var placeHolder = undefined;
 		var offsetX = 0;
@@ -84,7 +85,6 @@ angular.module("nestable",[])
 			$event.stopPropagation();
 			if(!draggedElement || !draggedNode)
 				return;
-			var dropElement = getLiByPoint($event.pageX, $event.pageY);
 
 			if(dropElement){
 				var dropCoordinates = JSON.parse(dropElement.attr('data-coordinates'));
@@ -110,6 +110,7 @@ angular.module("nestable",[])
 					else
 						console.log("maximum depth achievable is "+ scope.maxHeight);
 				}
+				dropElement = undefined;
 			}
 			if(draggedElement){
 				draggedElement.css({'position':'static','left':'0px','top':'0px','z-index':1});
@@ -126,19 +127,30 @@ angular.module("nestable",[])
 		}
 
 		function dragged($event){
-			$event.stopPropagation();
 			if(!draggedElement)
 				return;
+			$event.stopPropagation();
+			$event.preventDefault();
 			refreshDraggedElement($event);
 		}
 
 		function refreshDraggedElement($event){
-			draggedElement.css({'left':parentOffsetX + $event.pageX - offsetX,'top':parentOffsetY + $event.pageY - offsetY});
+			var newX = parentOffsetX + $event.pageX - offsetX;
+			var newY = parentOffsetY + $event.pageY - offsetY;
 			if(!placeHolder){
 				placeHolder = $('<li class="placeholder">');
 				placeHolder.insertAfter(draggedElement);
 				placeHolder.height(draggedElement.height());
+			} else {
+				var newDropElement = getLiByPoint($event.pageX, $event.pageY);
+				if(newDropElement && newDropElement !== dropElement){
+					dropElement = newDropElement;
+					placeHolder.detach().prependTo(newDropElement.children('ol'));
+					if(placeHolder.offset().top < draggedElement.parent().offset().top)
+						newY = newY - placeHolder.height();
+				}
 			}
+			draggedElement.css({'left': newX,'top': newY});
 		}
 
 		function getNode(coordinates){
