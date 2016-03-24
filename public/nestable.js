@@ -24,10 +24,12 @@ angular.module("nestable",[])
 		var draggedNode = undefined;
 		var draggedElement = undefined;
 		var rootElement = element;
-		scope.offsetX = 0;
-		scope.offsetY = 0;
+		var placeHolder = undefined;
+		var offsetX = 0;
+		var offsetY = 0;
+		var parentOffsetX = 0, parentOffsetY = 0;
 
-		$('body').on('mouseleave', function(){if(draggedElement !== undefined)scope.$apply(dragStop);})
+		$('body').on('mouseleave', function(){if(draggedElement !== undefined){dragStop();}});
 		rootElement.on('mousedown', function(event){if(!$(event.target).hasClass(scope.preventDrag))dragStart(event);});
 		rootElement.on('mouseup', function(event){if(!$(event.target).hasClass(scope.preventDrag))dragStop(event);});
 		rootElement.on('mousemove', function(event){if(!$(event.target).hasClass(scope.preventDrag))dragged(event);});
@@ -61,21 +63,33 @@ angular.module("nestable",[])
 		function dragStart($event){
 			$event.stopPropagation();
 			draggedElement = $($event.target).closest('li');
-			var node = getNode(JSON.parse(draggedElement.attr('data-coordinates')));
-			draggedNode = node;;
-			draggedElement.css("position","relative");
-			scope.offsetX = $event.pageX;
-			scope.offsetY = $event.pageY;
+			var coord = draggedElement.attr('data-coordinates');
+			if(coord === undefined)
+				return;
+			var node = getNode(JSON.parse(coord));
+			draggedNode = node;
+			draggedElement.parent().css("position","relative");
+			offsetX = $event.pageX;
+			offsetY = $event.pageY;
+			parentOffsetY = draggedElement.position().top + 5;
+			parentOffsetX = draggedElement.position().left + 15;
+			draggedElement.css({"position":"absolute","z-index":"3"});
+			refreshDraggedElement($event);
+			draggedElement.width(placeHolder.width());
 		}
 
 		function dragStop($event){
+			if($event === undefined)
+				return;
 			$event.stopPropagation();
 			if(!draggedElement || !draggedNode)
 				return;
-			var dropElement = getCoveringNode($event.pageX, $event.pageY);
+			var dropElement = getLiByPoint($event.pageX, $event.pageY);
 
 			if(dropElement){
 				var dropCoordinates = JSON.parse(dropElement.attr('data-coordinates'));
+				if(dropCoordinates === undefined)
+					return;
 				var dropNode = getNode(dropCoordinates);
 				var initialCoordinates = draggedNode.coordinates.slice();
 				var i = initialCoordinates.pop();
@@ -97,19 +111,34 @@ angular.module("nestable",[])
 						console.log("maximum depth achievable is "+ scope.maxHeight);
 				}
 			}
-			if(draggedElement)
-				draggedElement.css({'position':'static','left':'0px','top':'0px'});
+			if(draggedElement){
+				draggedElement.css({'position':'static','left':'0px','top':'0px','z-index':1});
+				draggedElement.parent().css("position","static");
+				placeHolder.remove();
+			}
+			placeHolder = undefined;
 			draggedElement = undefined;
 			draggedNode = undefined;
-			scope.offsetX = 0;
-			scope.offsetY = 0;
+			offsetX = 0;
+			offsetY = 0;
+			parentOffsetX = 0;
+			parentOffsetY = 0;
 		}
 
 		function dragged($event){
 			$event.stopPropagation();
 			if(!draggedElement)
 				return;
-			draggedElement.css({'left':$event.pageX - scope.offsetX,'top':$event.pageY - scope.offsetY});
+			refreshDraggedElement($event);
+		}
+
+		function refreshDraggedElement($event){
+			draggedElement.css({'left':parentOffsetX + $event.pageX - offsetX,'top':parentOffsetY + $event.pageY - offsetY});
+			if(!placeHolder){
+				placeHolder = $('<li class="placeholder">');
+				placeHolder.insertAfter(draggedElement);
+				placeHolder.height(draggedElement.height());
+			}
 		}
 
 		function getNode(coordinates){
@@ -119,7 +148,7 @@ angular.module("nestable",[])
 			return el;
 		}
 
-		function getCoveringNode(x, y, parent){
+		function getLiByPoint(x, y, parent){
 			var children;
 			if(!parent){
 				parent = rootElement;
@@ -131,13 +160,15 @@ angular.module("nestable",[])
 			var offset;
 			for(i = 0;i < children.length; i++){
 				var child = $(children[i]);
+				if(child.hasClass('placeholder'))
+					continue;
 				offset = child.offset();
 				if(child.attr('data-coordinates') !== draggedElement.attr('data-coordinates'))
 					if(offset.left < x 
 							&& offset.top < y 
 							&& offset.left+child.outerWidth() > x 
 							&& offset.top+child.outerHeight() > y)
-						return getCoveringNode(x,y, child) || child;
+						return getLiByPoint(x,y, child) || child;
 			}
 			return undefined;
 		}
@@ -181,7 +212,9 @@ angular.module("nestable",[])
 			"children":[{
 				"name":"LI 2.1",
 				"children":[
-					{"name":"LI 2.1.1"}
+					{"name":"LI 2.1.1"},
+					{"name":"LI 2.1.2"}
+
 				]
 			},{
 				"name":"LI 2.2",
