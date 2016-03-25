@@ -1,0 +1,23 @@
+{
+  "name": "angular-nestable",
+  "homepage": "https://github.com/aditya-r-m/nestable",
+  "authors": [
+    "aditya-r-m <adityam.rtm@gmail.com>"
+  ],
+  "description": "Hierarchical drag and drop list made with angular",
+  "main": "",
+  "moduleType": [],
+  "keywords": [
+    "Nestable",
+    "angular"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
