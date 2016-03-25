@@ -1,0 +1,7 @@
+<li ng-repeat="node in node.children" data-coordinates="{{node.coordinates}}">
+
+	<i class="glyphicon prevent-drag" ng-show="node.state==='expanded'||node.state==='collapsed'" ng-click="toggleState($event, node)" ng-class="node.state==='collapsed'?'glyphicon-chevron-down':'glyphicon-chevron-up'" data-toggle="collapse" data-target="ol[data-id='{{node.coordinates}}']"></i>
+	<div ng-include="customTemplate"></div>
+	<ol data-id="{{node.coordinates}}" class="collapse {{:: node.state==='collapsed'?'':'in'}}" ng-include="recursiveTemplate"></ol>
+
+</li>
